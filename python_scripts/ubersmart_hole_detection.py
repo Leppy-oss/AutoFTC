@@ -1,3 +1,4 @@
+import wx
 import os
 import json
 import glob
@@ -46,43 +47,46 @@ def get_bounding_box(shape):
     }
 
 
-from OCC.Core.TopExp import TopExp_Explorer
-from OCC.Core.TopAbs import TopAbs_EDGE
-from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
-from OCC.Core.GeomAbs import GeomAbs_Circle
-from OCC.Core.TopoDS import topods
+from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
+from OCC.Core.GeomAbs import GeomAbs_Cylinder
 from OCC.Core.gp import gp_Pnt
+from OCC.Core.TopoDS import topods
+from OCC.Core.TopExp import TopExp_Explorer
+from OCC.Core.TopAbs import TopAbs_FACE
 
 
 def find_attachment_points(shape):
-    explorer = TopExp_Explorer(shape, TopAbs_EDGE)
+    explorer = TopExp_Explorer(shape, TopAbs_FACE)
     attachment_points = []
-    seen_centers = set()
+    seen = set()
 
     while explorer.More():
-        edge = topods.Edge(explorer.Current())
-        curve_adaptor = BRepAdaptor_Curve(edge)
-        curve_type = curve_adaptor.GetType()
+        face = topods.Face(explorer.Current())
+        surf = BRepAdaptor_Surface(face, True)
+        surf_type = surf.GetType()
 
-        if curve_type == GeomAbs_Circle:
-            circle = curve_adaptor.Circle()
-            center = circle.Location()
-            radius = circle.Radius()
-            print(radius)
+        if surf_type == GeomAbs_Cylinder:
+            cylinder = surf.Cylinder()
+            radius = cylinder.Radius()
+            axis = cylinder.Axis()
+            location = axis.Location()
+            direction = axis.Direction()
 
-            # Filter out circles with diameter less than 4mm
-            if radius * 2 >= 4.0:
-                # Round center coordinates to avoid duplicates
-                center_coords = (
-                    round(center.X(), 3),
-                    round(center.Y(), 3),
-                    round(center.Z(), 3),
+            if radius * 2 >= 3.5:  # Diameter filter
+                key = (
+                    round(location.X(), 3),
+                    round(location.Y(), 3),
+                    round(location.Z(), 3),
+                    round(direction.X(), 3),
+                    round(direction.Y(), 3),
+                    round(direction.Z(), 3),
                 )
-                if center_coords not in seen_centers:
-                    seen_centers.add(center_coords)
+                if key not in seen:
+                    seen.add(key)
                     attachment_points.append(
                         {
-                            "center": [center.X(), center.Y(), center.Z()],
+                            "center": [location.X(), location.Y(), location.Z()],
+                            "direction": [direction.X(), direction.Y(), direction.Z()],
                             "radius": radius,
                         }
                     )
@@ -121,7 +125,7 @@ def process_step_file(filepath):
         json.dump(data, f, indent=4)
 
     # Display model and attachment points
-    display, start_display, add_menu, add_function_to_menu = init_display()
+    display, start_display, add_menu, add_function_to_menu = init_display("wx")
     display.DisplayShape(shape, update=True)
     for pt in attachments:
         p = gp_Pnt(*pt["center"])
@@ -130,6 +134,17 @@ def process_step_file(filepath):
 
     display.FitAll()
     print("Press any key in viewer window to continue...")
+
+    # === Add key handler to quit on any key press ===
+    def on_key(*args, **kwargs):
+        print("on key trig")
+        print("Key pressed, closing viewer.")
+        wx.GetApp().ExitMainLoop()
+
+    # Bind the event (wx backend automatically passes key press events)
+    
+    wx.GetApp().GetTopWindow().Bind(wx.EVT_KEY_DOWN, on_key)
+
     start_display()
 
     # Save GLB
