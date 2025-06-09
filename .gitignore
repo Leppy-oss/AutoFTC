@@ -31,6 +31,9 @@
 *.glb
 *.STEP
 
+# Other serialized stuff
+serialized/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
