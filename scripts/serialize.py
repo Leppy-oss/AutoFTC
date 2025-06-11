@@ -225,11 +225,11 @@ def process_step_file(filepath):
     with open(os.path.join(SERIALIZED_DIR, part_id + ".json"), "w") as f:
         json.dump(data, f, indent=4)
 
+    """
     display, start_display, _add_menu, _add_function_to_menu = init_display("wx")
     display.DisplayShape(shape, update=True)
 
     # display attachment point spheres
-    """
     for pt in attachments:
         p = gp_Pnt(*pt["center"])
         s = BRepPrimAPI_MakeSphere(p, pt["radius"] * 0.5).Shape()
@@ -252,7 +252,7 @@ def process_step_file(filepath):
         color = colors[i % len(colors)]
         ais_shape.SetColor(Quantity_Color(*color, Quantity_TOC_RGB))
         display.Context.Display(ais_shape, True)
-    """
+
     display.FitAll()
     print("Press any key in viewer window to continue...")
 
@@ -263,14 +263,8 @@ def process_step_file(filepath):
 
     display.register_select_callback(lambda *args, **kwargs: on_key())
 
-    """
-    def on_key(*args, **kwargs):
-        print("Key pressed, closing viewer.")
-        wx.GetApp().ExitMainLoop()
-
-    wx.GetApp().GetTopWindow().Bind(wx.EVT_KEY_DOWN, on_key)
-    """
     start_display()
+    """
 
     glb_path = os.path.join(GBL_DIR, part_id + ".gltf")
     write_gltf_file(shape, glb_path)
