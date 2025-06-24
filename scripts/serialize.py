@@ -45,7 +45,6 @@ def get_bounding_box(shape):
         "center": center,
     }
 
-"""
 def find_attachment_points(shape):
     explorer = TopExp_Explorer(shape, TopAbs_FACE)
     attachment_points = []
@@ -184,7 +183,6 @@ def find_mating_faces(shape):
         explorer.Next()
 
     return mating_faces
-"""
 
 def process_step_file(filepath):
     filename = os.path.basename(filepath)
@@ -201,8 +199,8 @@ def process_step_file(filepath):
     shape = reader.OneShape()
 
     bbox_info = get_bounding_box(shape)
-    # attachments = find_attachment_points(shape)
-    # mating_faces = find_mating_faces(shape)
+    attachments = find_attachment_points(shape)
+    mating_faces = find_mating_faces(shape)
 
     # Compute center points of mating faces
     """
@@ -225,7 +223,6 @@ def process_step_file(filepath):
     with open(os.path.join(SERIALIZED_DIR, part_id + ".json"), "w") as f:
         json.dump(data, f, indent=4)
 
-    """
     display, start_display, _add_menu, _add_function_to_menu = init_display("wx")
     display.DisplayShape(shape, update=True)
 
@@ -264,7 +261,6 @@ def process_step_file(filepath):
     display.register_select_callback(lambda *args, **kwargs: on_key())
 
     start_display()
-    """
 
     glb_path = os.path.join(GBL_DIR, part_id + ".gltf")
     write_gltf_file(shape, glb_path)
