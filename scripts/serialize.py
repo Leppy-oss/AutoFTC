@@ -25,21 +25,22 @@ from OCC.Core.TopAbs import TopAbs_OUT
 from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
 from OCC.Core.gp import gp_Pnt, gp_Vec
 from OCC.Core.GeomLProp import GeomLProp_SLProps
+import open3d as o3d
 
 MODELS_DIR = "./models"
-GBL_DIR = "./gbl"
+GLB_DIR = "./glb"
 SERIALIZED_DIR = "./serialized"
 
-os.makedirs(GBL_DIR, exist_ok=True)
+os.makedirs(GLB_DIR, exist_ok=True)
 os.makedirs(SERIALIZED_DIR, exist_ok=True)
 
 
 def get_bounding_box(shape):
     bbox = Bnd_Box()
     brepbndlib.Add(shape, bbox)
-    xmin, ymin, zmin, xmax, ymax, zmax = [round(v, 2) for v in bbox.Get()]
-    center = [(xmin + xmax) / 2, (ymin + ymax) / 2, (zmin + zmax) / 2]
-    size = [xmax - xmin, ymax - ymin, zmax - zmin]
+    xmin, ymin, zmin, xmax, ymax, zmax = bbox.Get()
+    center = [round(v, 2) for v in [(xmin + xmax) / 2, (ymin + ymax) / 2, (zmin + zmax) / 2]]
+    size = [round(v, 2) for v in [xmax - xmin, ymax - ymin, zmax - zmin]]
     return {
         "size": size,
         "center": center,
@@ -198,9 +199,10 @@ def process_step_file(filepath):
     reader.TransferRoots()
     shape = reader.OneShape()
 
+    print(f"Loaded {filename}. Retrieving bounding box information...")
     bbox_info = get_bounding_box(shape)
-    attachments = find_attachment_points(shape)
-    mating_faces = find_mating_faces(shape)
+    # attachments = find_attachment_points(shape)
+    # mating_faces = find_mating_faces(shape)
 
     # Compute center points of mating faces
     """
@@ -223,6 +225,7 @@ def process_step_file(filepath):
     with open(os.path.join(SERIALIZED_DIR, part_id + ".json"), "w") as f:
         json.dump(data, f, indent=4)
 
+    """
     display, start_display, _add_menu, _add_function_to_menu = init_display("wx")
     display.DisplayShape(shape, update=True)
 
@@ -261,10 +264,11 @@ def process_step_file(filepath):
     display.register_select_callback(lambda *args, **kwargs: on_key())
 
     start_display()
+    """
 
-    glb_path = os.path.join(GBL_DIR, part_id + ".gltf")
-    write_gltf_file(shape, glb_path)
-    print(f"Saved GLTF: {glb_path}\n")
+    glb_path = os.path.join(GLB_DIR, part_id + ".glb")
+    write_gltf_file(shape, glb_path, binary=True)
+    print(f"Saved GLB: {glb_path}\n")
 
 
 if __name__ == "__main__":

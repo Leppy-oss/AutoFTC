@@ -30,8 +30,11 @@
 *.gltf
 *.glb
 *.STEP
+glb/
+models/
+models_tbd/
 
-# Other serialized stuff
+# Serialized part information
 serialized/
 
 # debug
