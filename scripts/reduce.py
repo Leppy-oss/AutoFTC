@@ -42,7 +42,6 @@ def simplify_glb_vertex_clustering(input_glb_path, output_glb_path, voxel_diviso
         contraction=o3d.geometry.SimplificationContraction.Average,
     )
 
-    # Post-clean simplified mesh
     simplified_mesh.remove_duplicated_vertices()
     simplified_mesh.remove_duplicated_triangles()
     simplified_mesh.remove_degenerate_triangles()
@@ -59,18 +58,31 @@ def simplify_glb_vertex_clustering(input_glb_path, output_glb_path, voxel_diviso
     o3d.io.write_triangle_mesh(output_glb_path, simplified_mesh)
     print(f"Simplified GLB saved: {output_glb_path}")
 
+def simplify_glb_decimation(input_glb_path, output_glb_path, decimation_factor=0.5):
+    mesh = o3d.io.read_triangle_mesh(input_glb_path)
+
+    simplified_mesh = mesh.simplify_quadric_decimation(
+        target_number_of_triangles=int(len(mesh.triangles) * decimation_factor)
+    )
+
+    simplified_mesh.remove_duplicated_vertices()
+    simplified_mesh.remove_duplicated_triangles()
+    simplified_mesh.remove_degenerate_triangles()
+    simplified_mesh.remove_non_manifold_edges()
+    simplified_mesh.compute_vertex_normals()
+
+    o3d.io.write_triangle_mesh(output_glb_path, simplified_mesh)
 
 if __name__ == "__main__":
-    step_path = "./models/ClampCollar6ID.STEP"
-    glb_original = "./glb/original.glb"
-    glb_simplified = "./glb/simplified_vertex_clustering"
+    step_path = "./models/WormGearSet.STEP"
+    glb_original = "./glb_reduced/original.glb"
+    glb_simplified = "./glb_reduced/simplified"
 
-    # Load and mesh original shape (fine mesh)
     shape = load_step(step_path)
     mesh_shape(shape, deflection=0.1)
     shape_to_glb(shape, glb_original)
 
-    # Simplify the exported GLB mesh using vertex clustering
-    simplify_glb_vertex_clustering(glb_original, f"{glb_simplified}.glb", voxel_divisor=512)
+    simplify_glb_vertex_clustering(glb_original, f"{glb_simplified}_vc.glb", voxel_divisor=512)
+    simplify_glb_decimation(glb_original, f"{glb_simplified}_dc.glb", decimation_factor=0.5)
     # for voxel_divisor in range(32, 68, 4):
         # simplify_glb_vertex_clustering(glb_original, f"{glb_simplified}_{voxel_divisor}.glb", voxel_divisor=voxel_divisor)

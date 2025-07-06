@@ -42,15 +42,15 @@ export default function RobotDesigner() {
         const parts = await response.json()
         setAvailableParts(parts)
         setRobotParts([])
-        setRobotParts([{
+        setRobotParts([/*{
           id: "test",
           fileName: "ssc.glb",
           position: [0, 0, 0],
           rotation: [0, 0, 0]
-        },
+        },*/
         {
           id: "test2",
-          fileName: "ClampCollar6ID.glb",
+          fileName: "MecanumWheel.glb",
           position: [0, 0, 0],
           rotation: [0, 0, 0]
         }])

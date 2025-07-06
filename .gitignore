@@ -31,6 +31,8 @@
 *.glb
 *.STEP
 glb/
+glb_old/
+glb_reduced/
 models/
 models_tbd/
 
