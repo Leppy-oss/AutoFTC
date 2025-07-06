@@ -4,15 +4,27 @@ import { Canvas } from "@react-three/fiber"
 import { OrbitControls, Environment, Grid } from "@react-three/drei"
 import { Suspense } from "react"
 import { useGLTF } from "@react-three/drei"
-import { BoxGeometry, MeshStandardMaterial, EdgesGeometry, LineBasicMaterial, LineSegments, BufferGeometry, Group } from "three"
+import {
+    BoxGeometry,
+    MeshStandardMaterial,
+    EdgesGeometry,
+    LineBasicMaterial,
+    LineSegments,
+    BufferGeometry,
+    Group
+} from "three"
 import { useMemo } from "react"
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils"
 
 export interface RobotPart {
     id: string
-    fileName: string
+    name: string
+    bbSize: [number, number, number]
+    bbCenter: [number, number, number]
     position: [number, number, number]
     rotation: [number, number, number]
+    minCorner: [number, number, number]
+    maxCorner: [number, number, number]
 }
 
 interface RobotPartProps {
@@ -20,14 +32,14 @@ interface RobotPartProps {
 }
 
 function RobotPartComponent({ part }: RobotPartProps) {
-    const { scene } = useGLTF(`/glb/${part.fileName}`)
+    const { scene } = useGLTF(`/glb/${part.name}`)
     const merged = useMemo(() => {
         const geometries: BufferGeometry[] = []
         const group = new Group()
 
         scene.traverse((child: any) => {
             if (child.isMesh) {
-                child.material = new MeshStandardMaterial({ color: part.fileName.includes("Wheel")? 0x000000 : 0x708090 })
+                child.material = new MeshStandardMaterial({ color: part.name.includes("Wheel") ? 0x000000 : 0x708090 })
                 child.updateMatrix()
                 const geom = child.geometry.clone()
                 geom.applyMatrix4(child.matrix)
@@ -35,8 +47,8 @@ function RobotPartComponent({ part }: RobotPartProps) {
             }
         })
         group.add(scene.clone())
-        
-        if (!part.fileName.includes("Wheel")) {
+
+        if (!part.name.includes("Wheel")) {
             const mergedGeometry = mergeGeometries(geometries, false)
             const edges = new EdgesGeometry(mergedGeometry, 80)
             const lines = new LineSegments(
@@ -45,6 +57,19 @@ function RobotPartComponent({ part }: RobotPartProps) {
             )
             group.add(lines)
         }
+
+        const bb = new LineSegments(
+            new EdgesGeometry(new BoxGeometry(part.bbSize[0], part.bbSize[1], part.bbSize[2])),
+            new LineBasicMaterial({ color: 0x66cdaa })
+        )
+
+        group.add(bb)
+
+        bb.position.set(
+            part.position[0] + part.bbCenter[0],
+            part.position[1] + part.bbCenter[1],
+            part.position[2] + part.bbCenter[2]
+        )
 
         return group
     }, [scene])
@@ -104,7 +129,7 @@ export default function RobotViewer({ parts }: { parts: RobotPart[] }) {
                 <Suspense fallback={<LoadingFallback />}>
                     <Scene parts={parts} />
                     <Environment preset="studio" />
-                    <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
+                    <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} enableDamping={true} />
                 </Suspense>
             </Canvas>
         </div>

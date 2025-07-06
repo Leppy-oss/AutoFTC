@@ -10,7 +10,11 @@ import RobotViewer from "@/components/viewer"
 import { RobotPart } from "@/components/viewer"
 
 interface AIResponsePart {
-  partFileName: string
+  name: string
+  bbSize: [number, number, number]
+  bbCenter: [number, number, number]
+  minCorner: [number, number, number]
+  maxCorner: [number, number, number]
   position: [number, number, number]
   rotation: [number, number, number]
   reasoning: string
@@ -42,18 +46,28 @@ export default function RobotDesigner() {
         const parts = await response.json()
         setAvailableParts(parts)
         setRobotParts([])
-        setRobotParts([/*{
+        /*
+        setRobotParts([{
           id: "test",
-          fileName: "ssc.glb",
+          name: "UChannel9H.glb",
+          bbSize: [48.0, 240.0, 48.0],
+          bbCenter: [0.0, 120.0, -21.5],
+          minCorner: [-24.0, 0.0, -45.5],
+          maxCorner: [24.0, 240.0, 2.5],
           position: [0, 0, 0],
           rotation: [0, 0, 0]
-        },*/
+        },
         {
           id: "test2",
-          fileName: "MecanumWheel.glb",
+          name: "MecanumWheel.glb",
+          bbSize: [100.74, 101.76, 45.3],
+          bbCenter: [-49.45, 15.3, 3.2],
+          minCorner: [-99.82, -35.58, -19.45],
+          maxCorner: [0.92, 66.18, 25.85],
           position: [0, 0, 0],
           rotation: [0, 0, 0]
         }])
+        */
       } catch (error) {
         console.error("Error fetching parts:", error)
         setPartsError("Failed to load available parts. Please refresh the page.")
@@ -248,17 +262,19 @@ export default function RobotDesigner() {
 
       const aiResponse: AIResponse = await response.json()
 
-      const newParts: RobotPart[] = aiResponse.map((part) => ({
-        id: `part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        fileName: part.partFileName + ".glb",
-        position: [part.position[0] / 100, part.position[1] / 100, part.position[2] / 100],
-        rotation: part.rotation,
-      }))
+      const newParts: RobotPart[] = aiResponse.map(part => {
+        return {
+          id: `part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          ...part,
+          name: part.name + ".glb",
+          position: [part.position[0] / 100, part.position[1] / 100, part.position[2] / 100],
+        }
+      })
 
       setRobotParts((prev) => [...prev, ...newParts])
 
       // Combine reasoning from all parts, e.g. join with newlines or just take first
-      const combinedReasoning = aiResponse.map(p => p.reasoning).join("\n")
+      const combinedReasoning = aiResponse.map(p => `${p.name}: ${p.reasoning}`).join("\n")
       setLastAIReasoning(combinedReasoning)
 
       setGenerationStep((prev) => prev + 1)
@@ -290,7 +306,7 @@ export default function RobotDesigner() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">AutoFTC - Next Gen CADding</h1>
-          <p className="text-slate-600 text-lg">Design FIRST Tech Challenge robots with generative AI</p>
+          <p className="text-slate-600 text-lg">Design FIRST Tech Challenge robots with Generative AI</p>
         </div>
 
         {partsError && (
@@ -400,9 +416,12 @@ export default function RobotDesigner() {
                   <p className="text-sm text-slate-500 italic">No parts added yet</p>
                 ) : (
                   <div className="space-y-2 max-h-40 overflow-y-auto">
+                    <div key="placeholder" className="flex items-center justify-between">
+                      <span className="font-mono truncate text-xs">{"Name\tPosition\tRotation"}</span>
+                    </div>
                     {robotParts.map((part, index) => (
                       <div key={part.id} className="flex items-center justify-between text-xs">
-                        <span className="font-mono truncate">{`${part.fileName}\t${part.position}`}</span>
+                        <span className="font-mono truncate text-[0.65rem]">{`${part.name.slice(0, -4)}\t(${part.position.map(v => v.toPrecision(1))})\t(${part.rotation.map(v => v.toPrecision(1))})`}</span>
                         <Badge variant="outline" className="text-xs">
                           #{index + 1}
                         </Badge>

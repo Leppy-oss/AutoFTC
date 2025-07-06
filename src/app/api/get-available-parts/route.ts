@@ -4,7 +4,6 @@ import { join } from "path"
 export async function GET() {
     try {
         const glbDirectory = join(process.cwd(), "public", "glb")
-        console.log(glbDirectory);
         const files = await readdir(glbDirectory)
 
         const glbFiles = files.filter((file) => file.toLowerCase().endsWith(".glb"))
